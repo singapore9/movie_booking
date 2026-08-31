@@ -12,8 +12,12 @@ from app.domain.exceptions import (
 
 
 @pytest.fixture
-def movie_repository() -> AsyncMock:
-    return AsyncMock()
+def movie_repository(
+    movie: Movie,
+) -> AsyncMock:
+    _movie_repository = AsyncMock()
+    _movie_repository.get_by_id.return_value = movie
+    return _movie_repository
 
 
 @pytest.fixture
@@ -25,11 +29,17 @@ def saved_movie_repository() -> AsyncMock:
 def use_case(
     movie_repository: AsyncMock,
     saved_movie_repository: AsyncMock,
+    movie: Movie,
 ) -> SaveMovieUseCase:
-    return SaveMovieUseCase(
+    _use_case = SaveMovieUseCase(
         movie_repository=movie_repository,
         saved_movie_repository=saved_movie_repository,
     )
+    use_case_get_movie = _use_case.get_movie
+    _use_case.get_movie = AsyncMock(wraps=use_case_get_movie)
+    movie_service_get_movie = _use_case.movie_service.get_movie
+    _use_case.movie_service.get_movie = AsyncMock(wraps=movie_service_get_movie)
+    return _use_case
 
 
 @pytest.fixture
@@ -47,31 +57,16 @@ def save_movie_dto() -> SaveMovieDTO:
 
 class TestGetMovie:
     @pytest.mark.anyio
-    async def test_returns_movie(
+    async def test_use_case_uses_service_get_movie(
         self,
         use_case: SaveMovieUseCase,
         movie_repository: AsyncMock,
         movie: Movie,
     ) -> None:
-        movie_repository.get_by_id.return_value = movie
-
         result = await use_case.get_movie(movie.id)
 
         assert result == movie
-        movie_repository.get_by_id.assert_awaited_once_with(movie.id)
-
-    @pytest.mark.anyio
-    async def test_raises_when_movie_not_found(
-        self,
-        use_case: SaveMovieUseCase,
-        movie_repository: AsyncMock,
-    ) -> None:
-        movie_repository.get_by_id.return_value = None
-
-        with pytest.raises(MovieNotFoundError):
-            await use_case.get_movie(1)
-
-        movie_repository.get_by_id.assert_awaited_once_with(1)
+        use_case.movie_service.get_movie.assert_awaited_once_with(movie.id)
 
 
 class TestRaiseIfSavedMovieExists:
@@ -84,7 +79,6 @@ class TestRaiseIfSavedMovieExists:
         saved_movie_repository.exists.return_value = False
 
         await use_case.raise_if_saved_movie_exists(10, 1)
-
         saved_movie_repository.exists.assert_awaited_once_with(10, 1)
 
     @pytest.mark.anyio
@@ -111,12 +105,11 @@ class TestExecute:
         movie: Movie,
         save_movie_dto: SaveMovieDTO,
     ) -> None:
-        movie_repository.get_by_id.return_value = movie
         saved_movie_repository.exists.return_value = False
 
         await use_case.execute(save_movie_dto)
 
-        movie_repository.get_by_id.assert_awaited_once_with(
+        use_case.get_movie.assert_awaited_once_with(
             save_movie_dto.movie_id,
         )
         saved_movie_repository.exists.assert_awaited_once_with(
@@ -153,7 +146,6 @@ class TestExecute:
         exists: bool,
         expected_exception: type[Exception],
     ) -> None:
-        movie_repository.get_by_id.return_value = movie
         saved_movie_repository.exists.return_value = exists
 
         data = SaveMovieDTO(

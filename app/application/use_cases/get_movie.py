@@ -2,8 +2,8 @@ from app.application.dto import (
     GetMovieRequestDTO,
     GetMovieResponseDTO,
 )
+from app.application.services import MovieService
 from app.domain.entities import Movie
-from app.domain.exceptions import MovieNotFoundError
 from app.domain.repositories import MovieRepository
 
 
@@ -13,14 +13,10 @@ class GetMovieUseCase:
         movie_repository: MovieRepository,
     ) -> None:
         self.movie_repository = movie_repository
+        self.movie_service = MovieService(movie_repository)
 
     async def get_movie(self, movie_id: int) -> Movie | None:
-        movie = await self.movie_repository.get_by_id(movie_id)
-
-        if movie is None:
-            raise MovieNotFoundError()
-
-        return movie
+        return await self.movie_service.get_movie(movie_id)
 
     async def execute(self, data: GetMovieRequestDTO) -> GetMovieResponseDTO:
         movie = await self.get_movie(data.movie_id)

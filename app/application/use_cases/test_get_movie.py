@@ -9,17 +9,26 @@ from app.domain.exceptions import MovieNotFoundError
 
 
 @pytest.fixture
-def movie_repository() -> AsyncMock:
-    return AsyncMock()
+def movie_repository(
+    movie: Movie,
+) -> AsyncMock:
+    _movie_repository = AsyncMock()
+    _movie_repository.get_by_id.return_value = movie
+    return _movie_repository
 
 
 @pytest.fixture
 def use_case(
     movie_repository: AsyncMock,
 ) -> GetMovieUseCase:
-    return GetMovieUseCase(
+    _use_case = GetMovieUseCase(
         movie_repository=movie_repository,
     )
+    use_case_get_movie = _use_case.get_movie
+    _use_case.get_movie = AsyncMock(wraps=use_case_get_movie)
+    movie_service_get_movie = _use_case.movie_service.get_movie
+    _use_case.movie_service.get_movie = AsyncMock(wraps=movie_service_get_movie)
+    return _use_case
 
 
 @pytest.fixture
@@ -36,31 +45,16 @@ def get_movie_request_dto() -> GetMovieRequestDTO:
 
 class TestGetMovie:
     @pytest.mark.anyio
-    async def test_returns_movie(
+    async def test_use_case_uses_service_get_movie(
         self,
         use_case: GetMovieUseCase,
         movie_repository: AsyncMock,
         movie: Movie,
     ) -> None:
-        movie_repository.get_by_id.return_value = movie
-
         result = await use_case.get_movie(movie.id)
 
         assert result == movie
-        movie_repository.get_by_id.assert_awaited_once_with(movie.id)
-
-    @pytest.mark.anyio
-    async def test_raises_when_movie_not_found(
-        self,
-        use_case: GetMovieUseCase,
-        movie_repository: AsyncMock,
-    ) -> None:
-        movie_repository.get_by_id.return_value = None
-
-        with pytest.raises(MovieNotFoundError):
-            await use_case.get_movie(1)
-
-        movie_repository.get_by_id.assert_awaited_once_with(1)
+        use_case.movie_service.get_movie.assert_awaited_once_with(movie.id)
 
 
 class TestExecute:
@@ -70,17 +64,13 @@ class TestExecute:
         use_case: GetMovieUseCase,
         movie_repository: AsyncMock,
         get_movie_request_dto: GetMovieRequestDTO,
+        movie: Movie,
     ) -> None:
-        movie_repository.get_by_id.return_value = Movie(
-            id=3, title="Movie Lego", year=2025
-        )
-
         result = await use_case.execute(get_movie_request_dto)
 
-        movie_repository.get_by_id.assert_awaited_once_with(
+        use_case.get_movie.assert_awaited_once_with(
             get_movie_request_dto.movie_id,
         )
-
         assert result == GetMovieResponseDTO(id=3, title="Movie Lego", year=2025)
 
     @pytest.mark.anyio

@@ -13,8 +13,12 @@ from app.domain.entities import Movie
 
 
 @pytest.fixture
-def saved_movie_repository() -> AsyncMock:
-    return AsyncMock()
+def saved_movie_repository(
+    repository_user_movies: Iterable[Movie],
+) -> AsyncMock:
+    _saved_movie_repository = AsyncMock()
+    _saved_movie_repository.get_by_user_id.return_value = repository_user_movies
+    return _saved_movie_repository
 
 
 @pytest.fixture
@@ -74,7 +78,6 @@ class TestExecute:
         repository_user_movies: Iterable[Movie],
         user_movies_response_dto: GetUserMoviesResponseDTO,
     ) -> None:
-        saved_movie_repository.get_by_user_id.return_value = repository_user_movies
         response = await use_case.execute(get_user_movies_request_dto)
 
         saved_movie_repository.get_by_user_id.assert_awaited_once_with(
