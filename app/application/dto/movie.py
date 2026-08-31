@@ -10,6 +10,20 @@ def is_positive(value: int, handler, ctx) -> int:
     return value
 
 
+class MovieDTO(BaseModel):
+    id: Annotated[int, is_positive]
+    title: str
+    year: Annotated[int, is_positive]
+
+
+class GetUserMoviesRequestDTO(BaseModel):
+    user_id: Annotated[int, is_positive]
+
+
+class GetUserMoviesResponseDTO(BaseModel):
+    movies: list[MovieDTO]
+
+
 class SaveMovieDTO(BaseModel):
     user_id: Annotated[int, is_positive]
     movie_id: Annotated[int, is_positive]
