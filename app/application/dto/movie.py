@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from pydantic import BaseModel
+from pydantic import BaseModel, RootModel
 
 
 def is_positive(value: int, handler, ctx) -> int:
@@ -14,6 +14,14 @@ class MovieDTO(BaseModel):
     id: Annotated[int, is_positive]
     title: str
     year: Annotated[int, is_positive]
+
+
+class GetMovieRequestDTO(BaseModel):
+    movie_id: Annotated[int, is_positive]
+
+
+class GetMovieResponseDTO(RootModel[MovieDTO]):
+    pass
 
 
 class GetUserMoviesRequestDTO(BaseModel):

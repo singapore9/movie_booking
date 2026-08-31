@@ -1,4 +1,6 @@
 from .movie import (
+    GetMovieRequestDTO,
+    GetMovieResponseDTO,
     GetUserMoviesRequestDTO,
     GetUserMoviesResponseDTO,
     MovieDTO,
@@ -7,6 +9,8 @@ from .movie import (
 )
 
 __all__ = [
+    "GetMovieRequestDTO",
+    "GetMovieResponseDTO",
     "GetUserMoviesRequestDTO",
     "GetUserMoviesResponseDTO",
     "MovieDTO",
