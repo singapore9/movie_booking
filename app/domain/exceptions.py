@@ -8,3 +8,7 @@ class MovieNotFoundError(BaseDomainError):
 
 class MovieAlreadySavedError(BaseDomainError):
     pass
+
+
+class SavedMovieNotFoundError(BaseDomainError):
+    pass

@@ -13,3 +13,8 @@ def is_positive(value: int, handler, ctx) -> int:
 class SaveMovieDTO(BaseModel):
     user_id: Annotated[int, is_positive]
     movie_id: Annotated[int, is_positive]
+
+
+class UnsaveMovieDTO(BaseModel):
+    user_id: Annotated[int, is_positive]
+    movie_id: Annotated[int, is_positive]
