@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.domain.entities import Movie
 from app.infrastructure.database.base import Base
 
 if TYPE_CHECKING:
@@ -19,3 +20,19 @@ class MovieModel(Base):
     saved_by: Mapped[list["SavedMovieModel"]] = relationship(
         back_populates="movie",
     )
+
+    @staticmethod
+    def to_domain(model: "MovieModel") -> Movie:
+        return Movie(
+            id=model.id,
+            title=model.title,
+            year=model.year,
+        )
+
+    @staticmethod
+    def to_model(movie: Movie) -> "MovieModel":
+        return MovieModel(
+            id=movie.id,
+            title=movie.title,
+            year=movie.year,
+        )
